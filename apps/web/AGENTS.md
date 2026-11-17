@@ -38,6 +38,12 @@ boundaries) applies too; this file adds what is specific to the web app.
   development (`ng serve` proxies `/api` to http://localhost:3000, see `proxy.conf.json`) and
   in production (nginx), so the API keeps CORS off. API errors are RFC 9457 Problem Details
   (`application/problem+json`, validation errors listed per field in `errors`).
+- In production nginx (`nginx/default.conf`) sends a strict Content Security Policy: scripts,
+  styles, fonts, images and requests come only from the app's origin, and inline scripts and
+  styles need the nonce nginx writes over the `CSP_NONCE` placeholder in `index.html`
+  (`ngCspNonce`; Angular adds it to the styles it creates). So no inline `<script>`, `<style>`
+  or event handler attributes in `index.html`, and a new origin means updating the policy.
+  `ng serve` sends no CSP: check such changes with `npm run app:up`.
 - `TasksApi` (`tasks/tasks-api.ts`) is the only code that knows the tasks URLs. Lists are
   `httpResource`s (read `value()` only when `hasValue()`: it throws in the error state); changes
   return promises. A `PATCH` sends only the changed fields, with `null` for a cleared one.
