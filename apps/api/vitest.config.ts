@@ -8,5 +8,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    // Decorator metadata polyfill (class-transformer, Nest DI). In the app it is
+    // loaded by Nest itself; isolated unit tests need it explicitly.
+    setupFiles: ['reflect-metadata'],
   },
 });
