@@ -1,7 +1,7 @@
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface.js';
 
 /** Response headers that a script on an allowed origin may read (browsers hide the rest). */
-export const CORS_EXPOSED_HEADERS = ['Location', 'X-Request-Id'];
+export const CORS_EXPOSED_HEADERS = ['Location', 'X-Request-Id', 'Retry-After'];
 
 /** How long browsers may cache a preflight response. */
 const PREFLIGHT_MAX_AGE_SECONDS = 600;

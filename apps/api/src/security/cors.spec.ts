@@ -11,7 +11,7 @@ describe('buildCorsOptions', () => {
     expect(options).toEqual({
       origin: ['https://app.example.com', 'http://localhost:4200'],
       methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-      exposedHeaders: ['Location', 'X-Request-Id'],
+      exposedHeaders: ['Location', 'X-Request-Id', 'Retry-After'],
       maxAge: 600,
     });
   });

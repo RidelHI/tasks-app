@@ -70,6 +70,27 @@ export class EnvironmentVariables {
   })
   CORS_ORIGINS: string[] = [];
 
+  /** Requests each client (IP) may send per window before getting 429. */
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_REQUESTS: number = 100;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  RATE_LIMIT_WINDOW_SECONDS: number = 60;
+
+  /**
+   * Reverse proxies in front of the API whose X-Forwarded-For can be trusted to find the
+   * client IP. 0: the header is ignored (any client could forge it to dodge the rate limit).
+   */
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  TRUST_PROXY_HOPS: number = 0;
+
   @IsString()
   @IsNotEmpty()
   DB_HOST: string = 'localhost';

@@ -76,6 +76,42 @@ describe('validateEnv', () => {
     });
   });
 
+  describe('rate limiting and proxies', () => {
+    it('allows 100 requests per minute and trusts no proxy by default', () => {
+      expect(validateEnv(required)).toMatchObject({
+        RATE_LIMIT_REQUESTS: 100,
+        RATE_LIMIT_WINDOW_SECONDS: 60,
+        TRUST_PROXY_HOPS: 0,
+      });
+    });
+
+    it('converts the configured values', () => {
+      const env = validateEnv({
+        ...required,
+        RATE_LIMIT_REQUESTS: '20',
+        RATE_LIMIT_WINDOW_SECONDS: '10',
+        TRUST_PROXY_HOPS: '1',
+      });
+
+      expect(env).toMatchObject({
+        RATE_LIMIT_REQUESTS: 20,
+        RATE_LIMIT_WINDOW_SECONDS: 10,
+        TRUST_PROXY_HOPS: 1,
+      });
+    });
+
+    it.each([
+      ['RATE_LIMIT_REQUESTS', '0'],
+      ['RATE_LIMIT_REQUESTS', 'many'],
+      ['RATE_LIMIT_WINDOW_SECONDS', '0.5'],
+      ['TRUST_PROXY_HOPS', '-1'],
+      ['TRUST_PROXY_HOPS', 'true'],
+      ['TRUST_PROXY_HOPS', '11'],
+    ])('rejects %s=%j', (name, raw) => {
+      expect(() => validateEnv({ ...required, [name]: raw })).toThrow(new RegExp(name));
+    });
+  });
+
   it('requires the database credentials', () => {
     const act = () => validateEnv({});
 

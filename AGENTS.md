@@ -51,6 +51,9 @@ A change is done when build, lint and all tests pass.
   everything (`default-src 'none'`); only the Swagger UI path gets helmet's default CSP.
   CORS is off unless `CORS_ORIGINS` lists origins (an allowlist, never `*`); a response header
   a browser client must read goes in `CORS_EXPOSED_HEADERS` (`src/security/cors.ts`).
+  A global rate limit per client IP answers 429 with `Retry-After` (`RATE_LIMIT_*`);
+  infrastructure endpoints (health checks) opt out with `@SkipThrottle()`. Behind a reverse
+  proxy, set `TRUST_PROXY_HOPS` so the client IP comes from `X-Forwarded-For`.
 - Read configuration only through `ConfigService<EnvironmentVariables, true>`, never
   `process.env`. New variables go in `src/config/env.validation.ts` and `.env.example`.
 - Log through `Logger` from `@nestjs/common` (`new Logger(MyClass.name)`); never

@@ -1,6 +1,7 @@
-import { type INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
 import { ProblemDetailsFilter } from './common/errors/problem-details.filter.js';
 import { ValidationException } from './common/errors/validation.exception.js';
@@ -15,13 +16,18 @@ export const API_PREFIX = 'api';
  * exactly what runs in production: logger, security headers, `/api/v1` routes, global input
  * validation and RFC 9457 error responses.
  */
-export function configureApp(app: INestApplication): INestApplication {
+export function configureApp<T extends NestExpressApplication>(app: T): T {
   app.useLogger(app.get(Logger));
 
   // First middleware, so every response carries the headers (errors and 404s included).
   app.use(securityHeaders());
 
   const config = app.get(ConfigService<EnvironmentVariables, true>);
+
+  // How many reverse proxies may set X-Forwarded-For: decides the client IP (`req.ip`) that the
+  // rate limit counts. 0 ignores the header, which any client could forge.
+  app.set('trust proxy', config.get('TRUST_PROXY_HOPS', { infer: true }));
+
   const cors = buildCorsOptions(config.get('CORS_ORIGINS', { infer: true }));
   if (cors) {
     app.enableCors(cors);
