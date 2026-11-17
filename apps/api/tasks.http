@@ -1,0 +1,93 @@
+# Manual requests for the Tasks API (VS Code "REST Client" extension: humao.rest-client).
+# Start the database and the API first: `npm run db:up` and `npm run dev:api`.
+# Send "Create a task" first: the requests below reuse the id of the task it creates.
+
+@baseUrl = http://localhost:3000/api/v1
+@taskId = {{createTask.response.body.$.id}}
+
+### Create a task
+# @name createTask
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "  Try the REST Client  ",
+  "description": "Send every request of this file.",
+  "assignee": "Jane Doe",
+  "dueDate": "2026-12-01"
+}
+
+### Get the task just created
+GET {{baseUrl}}/tasks/{{taskId}}
+
+### Start working on it (only the fields sent change)
+PATCH {{baseUrl}}/tasks/{{taskId}}
+Content-Type: application/json
+
+{
+  "status": "in_progress"
+}
+
+### Clear the optional fields (null clears description, assignee and dueDate)
+PATCH {{baseUrl}}/tasks/{{taskId}}
+Content-Type: application/json
+
+{
+  "description": null,
+  "assignee": null,
+  "dueDate": null
+}
+
+### Mark it as done
+PATCH {{baseUrl}}/tasks/{{taskId}}
+Content-Type: application/json
+
+{
+  "status": "done"
+}
+
+### Create with the minimum: only the title (status pending, the rest null)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "Only a title"
+}
+
+### Delete the task (204, empty body)
+DELETE {{baseUrl}}/tasks/{{taskId}}
+
+### Get it again (404 once deleted)
+GET {{baseUrl}}/tasks/{{taskId}}
+
+### Error 400: invalid fields, listed in `errors` (errors are application/problem+json)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "   ",
+  "status": "archived",
+  "dueDate": "2026-02-30",
+  "priority": "high"
+}
+
+### Error 400: null is not allowed for title or status
+PATCH {{baseUrl}}/tasks/{{taskId}}
+Content-Type: application/json
+
+{
+  "title": null
+}
+
+### Error 400: the id is not a UUID
+GET {{baseUrl}}/tasks/42
+
+### Error 404: a UUID that does not exist
+GET {{baseUrl}}/tasks/{{$guid}}
+
+### Your own request id comes back in the X-Request-Id header (and in the logs)
+GET {{baseUrl}}/tasks/{{$guid}}
+X-Request-Id: manual-test-001
+
+### OpenAPI document (the interactive docs are at http://localhost:3000/api/docs)
+GET http://localhost:3000/api/docs-json
