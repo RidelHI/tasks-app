@@ -15,6 +15,14 @@
 !apps/api/tsconfig.build.json
 !apps/api/src/
 
+# Web app sources, build settings and nginx configuration.
+!apps/web/angular.json
+!apps/web/tsconfig.json
+!apps/web/tsconfig.app.json
+!apps/web/public/
+!apps/web/src/
+!apps/web/nginx/
+
 # Never inside an image, even within the folders above: tests and local settings.
 **/*.spec.ts
 **/.env
