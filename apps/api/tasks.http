@@ -54,6 +54,18 @@ Content-Type: application/json
   "title": "Only a title"
 }
 
+### List the tasks: first page of 20, newest first
+GET {{baseUrl}}/tasks
+
+### Second page of 5 tasks
+GET {{baseUrl}}/tasks?page=2&pageSize=5
+
+### Filter by status
+GET {{baseUrl}}/tasks?status=pending
+
+### Filter by assignee (whole name, ignoring case) and status
+GET {{baseUrl}}/tasks?assignee=jane%20doe&status=pending
+
 ### Delete the task (204, empty body)
 DELETE {{baseUrl}}/tasks/{{taskId}}
 
@@ -78,6 +90,9 @@ Content-Type: application/json
 {
   "title": null
 }
+
+### Error 400: invalid and unknown query parameters
+GET {{baseUrl}}/tasks?page=0&pageSize=500&sort=title
 
 ### Error 400: the id is not a UUID
 GET {{baseUrl}}/tasks/42

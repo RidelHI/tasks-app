@@ -15,6 +15,14 @@ type TaskBody = Omit<TaskResponseDto, 'createdAt' | 'updatedAt'> & {
   updatedAt: string;
 };
 
+interface TaskPage {
+  items: TaskBody[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
 describe('Tasks (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -90,6 +98,115 @@ describe('Tasks (e2e)', () => {
       });
       const fields = (response.body as { errors: { field: string }[] }).errors.map((e) => e.field);
       expect(fields.sort()).toEqual(['dueDate', 'id', 'status', 'title']);
+    });
+  });
+
+  describe('GET /api/v1/tasks', () => {
+    /** Creates the tasks one request at a time, so each one is newer than the previous. */
+    const createTasks = async (bodies: object[]): Promise<TaskBody[]> => {
+      const tasks: TaskBody[] = [];
+      for (const body of bodies) {
+        tasks.push(await createTask(body));
+      }
+      return tasks;
+    };
+
+    const list = async (query = ''): Promise<TaskPage> => {
+      const response = await http().get(`${TASKS}${query}`).expect(200);
+      return response.body as TaskPage;
+    };
+
+    const titles = (page: TaskPage) => page.items.map((task) => task.title);
+
+    it('answers an empty page when there are no tasks', async () => {
+      expect(await list()).toEqual({
+        items: [],
+        page: 1,
+        pageSize: 20,
+        totalItems: 0,
+        totalPages: 0,
+      });
+    });
+
+    it('returns the first page, newest first', async () => {
+      const [first, second] = await createTasks([{ title: 'First' }, { title: 'Second' }]);
+
+      expect(await list()).toEqual({
+        items: [second, first],
+        page: 1,
+        pageSize: 20,
+        totalItems: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('splits the tasks into pages', async () => {
+      await createTasks([1, 2, 3, 4, 5].map((n) => ({ title: `Task ${n}` })));
+
+      const page = await list('?page=2&pageSize=2');
+
+      expect(titles(page)).toEqual(['Task 3', 'Task 2']);
+      expect(page).toMatchObject({ page: 2, pageSize: 2, totalItems: 5, totalPages: 3 });
+    });
+
+    it('answers a page past the end with no items and the real totals', async () => {
+      await createTasks([{ title: 'Only one' }]);
+
+      expect(await list('?page=3')).toEqual({
+        items: [],
+        page: 3,
+        pageSize: 20,
+        totalItems: 1,
+        totalPages: 1,
+      });
+    });
+
+    describe('filters', () => {
+      beforeEach(async () => {
+        await createTasks([
+          { title: 'Pending for Jane', assignee: 'Jane Doe' },
+          { title: 'Done by Jane', assignee: 'jane doe', status: 'done' },
+          { title: 'Pending for John', assignee: 'John Roe' },
+          { title: 'Pending for nobody' },
+        ]);
+      });
+
+      it('by status, counting only the matching tasks', async () => {
+        const page = await list('?status=pending');
+
+        expect(titles(page)).toEqual([
+          'Pending for nobody',
+          'Pending for John',
+          'Pending for Jane',
+        ]);
+        expect(page).toMatchObject({ totalItems: 3, totalPages: 1 });
+      });
+
+      it('by the whole assignee name, ignoring case and surrounding whitespace', async () => {
+        const page = await list(`?assignee=${encodeURIComponent('  JANE DOE ')}`);
+
+        expect(titles(page)).toEqual(['Done by Jane', 'Pending for Jane']);
+      });
+
+      it('not by part of the assignee name', async () => {
+        expect((await list('?assignee=jane')).totalItems).toBe(0);
+      });
+
+      it('by status and assignee together', async () => {
+        const page = await list('?status=pending&assignee=Jane%20Doe');
+
+        expect(titles(page)).toEqual(['Pending for Jane']);
+      });
+    });
+
+    it('rejects invalid and unknown query parameters with a 400 problem', async () => {
+      const response = await http()
+        .get(`${TASKS}?page=0&pageSize=101&status=archived&sort=title`)
+        .expect(400)
+        .expect('Content-Type', /^application\/problem\+json/);
+
+      const fields = (response.body as { errors: { field: string }[] }).errors.map((e) => e.field);
+      expect(fields.sort()).toEqual(['page', 'pageSize', 'sort', 'status']);
     });
   });
 
