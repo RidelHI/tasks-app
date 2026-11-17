@@ -22,6 +22,7 @@ Task management app in an npm workspaces monorepo:
 | Run the web app (port 4200) | `npm run dev:web` (proxies `/api` to the API)        |
 | Build / lint / unit tests   | `npm run build` · `npm run lint` · `npm test`        |
 | E2E tests (requires Docker) | `npm run test:e2e`                                   |
+| Whole app in Docker (8080)  | `npm run app:up` · `npm run app:logs` · `app:down`   |
 | Format                      | `npm run format`                                     |
 
 A change is done when build, lint and all tests pass, for both apps.
@@ -81,6 +82,20 @@ A change is done when build, lint and all tests pass, for both apps.
   applies the same `configureApp()` as `main.ts`, and run against a disposable PostgreSQL
   container started once per run by Testcontainers (`test/setup`). E2E files share that
   database and run one after another; clean up the rows a test creates.
+
+## Docker
+
+- `compose.yaml` runs PostgreSQL alone (`npm run db:up`, for development) or, with the `app`
+  profile (`npm run app:up`), the whole app built as for production on http://localhost:8080:
+  `migrate` applies the migrations and exits, then `api` starts, then `web` (nginx serves the
+  Angular build and forwards `/api` to the API). Only the web port is published, on localhost.
+- Each app has its image (`apps/<app>/Dockerfile`), built from the repository root.
+  `.dockerignore` is an allowlist: a file an image needs must be added to it. Base images are
+  pinned by version and digest; update both together.
+- Containers run as non-root users, with a read-only file system (only `/tmp` is writable) and
+  no Linux capabilities. The API image has no npm: commands run `node` directly.
+- nginx (`apps/web/nginx/`) sets the static files' headers, including a CSP with a new nonce
+  per response; API responses keep the API's own headers.
 
 ## Git
 
