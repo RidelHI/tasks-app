@@ -45,7 +45,12 @@
         </div>
       }
     } @else {
-      <app-task-table [tasks]="page.items" [today]="today" (edit)="openForm($event)" />
+      <app-task-table
+        [tasks]="page.items"
+        [today]="today"
+        (edit)="openForm($event)"
+        (statusChange)="changeStatus($event)"
+      />
       <mat-paginator
         aria-label="Pages of tasks"
         [length]="page.totalItems"

@@ -70,5 +70,12 @@
       <mat-icon svgIcon="edit" />
       <span>Edit</span>
     </button>
+    <mat-divider />
+    @for (status of otherStatuses(task); track status) {
+      <button mat-menu-item type="button" (click)="statusChange.emit({ task, status })">
+        <mat-icon [svgIcon]="statusIcons[status]" />
+        <span>{{ markAsLabel(status) }}</span>
+      </button>
+    }
   </ng-template>
 </mat-menu>
