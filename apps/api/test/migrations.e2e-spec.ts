@@ -30,7 +30,7 @@ describe('Database schema and migrations (e2e)', () => {
   };
 
   beforeAll(async () => {
-    dataSource = new DataSource({ ...buildDataSourceOptions(inject('database')), logging: false });
+    dataSource = new DataSource(buildDataSourceOptions(inject('database'), false));
     await dataSource.initialize();
   });
 
