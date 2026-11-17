@@ -3,16 +3,20 @@ import { HttpAdapterHost } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import { ProblemDetailsFilter } from './common/errors/problem-details.filter.js';
 import { ValidationException } from './common/errors/validation.exception.js';
+import { securityHeaders } from './security/security-headers.js';
 
 export const API_PREFIX = 'api';
 
 /**
  * Application-level configuration shared by main.ts and the e2e tests, so the tests exercise
- * exactly what runs in production: logger, `/api/v1` routes, global input validation and
- * RFC 9457 error responses.
+ * exactly what runs in production: logger, security headers, `/api/v1` routes, global input
+ * validation and RFC 9457 error responses.
  */
 export function configureApp(app: INestApplication): INestApplication {
   app.useLogger(app.get(Logger));
+
+  // First middleware, so every response carries the headers (errors and 404s included).
+  app.use(securityHeaders());
 
   app.setGlobalPrefix(API_PREFIX);
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
