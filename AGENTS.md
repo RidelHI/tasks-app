@@ -7,7 +7,8 @@ Guidance for AI coding agents working in this repository. Humans: see README.md.
 Task management app in an npm workspaces monorepo:
 
 - `apps/api`: REST API with NestJS 12 (ESM), TypeORM and PostgreSQL 18.
-- `apps/web`: Angular 22 + Angular Material client (coming soon).
+- `apps/web`: single-page client with Angular 22 and Angular Material; its own conventions are
+  in `apps/web/AGENTS.md`.
 
 ## Commands (run from the repository root)
 
@@ -18,13 +19,14 @@ Task management app in an npm workspaces monorepo:
 | Start PostgreSQL (Docker)   | `npm run db:up`                                      |
 | Apply / revert migrations   | `npm run migration:run` · `npm run migration:revert` |
 | Run the API in watch mode   | `npm run dev:api`                                    |
+| Run the web app (port 4200) | `npm run dev:web` (proxies `/api` to the API)        |
 | Build / lint / unit tests   | `npm run build` · `npm run lint` · `npm test`        |
 | E2E tests (requires Docker) | `npm run test:e2e`                                   |
 | Format                      | `npm run format`                                     |
 
-A change is done when build, lint and all tests pass.
+A change is done when build, lint and all tests pass, for both apps.
 
-## Conventions
+## API conventions (`apps/api`)
 
 - TypeScript strict; `any` is a lint error. Prefer `as const` unions over `enum`.
 - ESM: relative imports end in `.js` (`import { X } from './x.js'`).
@@ -91,4 +93,7 @@ A change is done when build, lint and all tests pass.
 - Never commit `.env` files or secrets.
 - Ask before adding a new dependency. Install scripts are opt-in: review new ones with
   `npm install-scripts ls` and record the decision in `allowScripts` (root `package.json`).
+- npm installs only versions published at least 7 days ago (`min-release-age` in `.npmrc`).
+  An urgent fix that cannot wait goes in `min-release-age-exclude`, with the reason in the
+  commit message.
 - Never edit lockfiles by hand.
