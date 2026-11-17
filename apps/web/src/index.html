@@ -9,6 +9,11 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   </head>
   <body>
-    <app-root></app-root>
+    <!--
+      CSP nonce: nginx replaces the placeholder with a new random value in every response and
+      sends the same value in the Content-Security-Policy header. Angular adds it to the styles it
+      creates, so the policy needs no 'unsafe-inline'. The development server sends no CSP.
+    -->
+    <app-root ngCspNonce="CSP_NONCE"></app-root>
   </body>
 </html>
