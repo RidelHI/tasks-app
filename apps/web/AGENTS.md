@@ -24,15 +24,33 @@ boundaries) applies too; this file adds what is specific to the web app.
 - Templates use the built-in control flow (`@if`, `@for` with `track`, `@switch`), `class` and
   `style` bindings (no `ngClass`, `ngStyle` or `CommonModule`; import only what the template
   uses) and keep logic in the component.
-- Forms use Signal Forms (`@angular/forms/signals`).
+- Forms use Signal Forms (`@angular/forms/signals`), bound to Material controls with
+  `[formField]`. The `submission` action returns the server's validation errors as field errors
+  (`kind: 'server'`), so they show under their field, and `onInvalid` focuses the first invalid
+  field. Errors raised by a control's own validator (e.g. the datepicker's `matDatepickerParse`)
+  have no message: give them one in the form's `CONTROL_ERROR_MESSAGES`.
 - Each page is a lazy route (`loadComponent`) with a `title`; unknown URLs render `NotFoundPage`.
 - Files follow the 2025 style guide (`tasks-page.ts`, no `.component` suffix) and are grouped by
-  feature (`tasks/`, `not-found/`); app-wide providers live in `core/`. Imports have no file
-  extension (bundler resolution), unlike the API.
+  feature (`tasks/`, `not-found/`); app-wide providers and helpers live in `core/`, components
+  shared by features in `shared/` and test helpers in a feature's `testing/` folder. Imports
+  have no file extension (bundler resolution), unlike the API.
 - The API is called with relative URLs (`/api/v1/...`). The page and the API share an origin in
   development (`ng serve` proxies `/api` to http://localhost:3000, see `proxy.conf.json`) and
   in production (nginx), so the API keeps CORS off. API errors are RFC 9457 Problem Details
   (`application/problem+json`, validation errors listed per field in `errors`).
+- `TasksApi` (`tasks/tasks-api.ts`) is the only code that knows the tasks URLs. Lists are
+  `httpResource`s (read `value()` only when `hasValue()`: it throws in the error state); changes
+  return promises. A `PATCH` sends only the changed fields, with `null` for a cleared one.
+- Show an API error with `errorMessage(error)` (`core/problem-details.ts`): it turns any error
+  into a sentence for the user (the server's `detail`, or a fixed text when the server cannot be
+  reached, for 429 and for 5xx). Branch on `hasStatus(error, status)` (a 404 after a change means
+  the task was deleted elsewhere) and read the details with `problemOf(error)`.
+- What a page shows lives in the URL, so it can be bookmarked and Back restores it: the list's
+  filters and page are query parameters bound to inputs (`withComponentInputBinding()`), read
+  with fallbacks to the defaults (`parseTaskQuery`) and written without them (`toUrlParams`).
+- Due dates are calendar dates (`YYYY-MM-DD`, no time zone): convert them with
+  `core/calendar-date.ts`, which works in local time, never with `toISOString()` (it can shift
+  the day).
 
 ## UI
 
@@ -47,6 +65,10 @@ boundaries) applies too; this file adds what is specific to the web app.
 - Accessibility: WCAG 2.2 AA. Every form control has a label, icon-only buttons have an
   `aria-label` and decorative icons stay hidden from assistive technology (the `mat-icon`
   default).
+- A list has loading (a progress bar over the previous page, which stays on screen), empty and
+  error states (the error offers "Try again"). The outcome of an action is told in a snack bar;
+  a destructive action asks first with `confirm()` (`shared/confirm-dialog.ts`). When the
+  focused element goes away (a deleted row), move the focus to a stable container.
 - User-facing text is in English.
 
 ## Tests and lint
@@ -55,5 +77,10 @@ boundaries) applies too; this file adds what is specific to the web app.
   through what the user or the caller sees: `RouterTestingHarness` for routes,
   `HttpTestingController` (`provideHttpClientTesting()`) for HTTP calls, Material component
   harnesses for Material components and `MatIconTestingModule` when a component shows icons.
+- `httpResource` and `HttpClient` count as pending work, so `fixture.whenStable()` and the
+  Material harnesses wait until every request is answered: start the action without awaiting
+  it, answer the request (`vi.waitFor` around `expectOne(url).flush(...)`), then await the
+  action. Disable Material animations (`MATERIAL_ANIMATIONS`) and build test data with the
+  fixtures in `tasks/testing/task-fixtures.ts` (`aTask`, `aPage`, `aProblem`).
 - ESLint (angular-eslint, type-aware) includes the template accessibility rules; `any` and
   floating promises are errors and `console` is limited to `warn` and `error`.
