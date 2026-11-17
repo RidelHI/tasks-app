@@ -30,6 +30,8 @@ A change is done when build, lint and all tests pass.
   class-validator DTOs; responses use response DTOs, never entities.
 - Read configuration only through `ConfigService<EnvironmentVariables, true>`, never
   `process.env`. New variables go in `src/config/env.validation.ts` and `.env.example`.
+- Log through `Logger` from `@nestjs/common` (`new Logger(MyClass.name)`); never
+  `console.log`. Logs are JSON (pino) outside development and carry the request id.
 - Schema changes only through TypeORM migrations; never `synchronize: true`.
 - Tests ship with the feature: unit tests next to the code (`*.spec.ts`), e2e tests in
   `apps/api/test`.
