@@ -6,7 +6,9 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
-    setupFiles: ['reflect-metadata'],
+    // One disposable PostgreSQL container per run (requires Docker).
+    globalSetup: ['./test/setup/postgres.global-setup.ts'],
+    setupFiles: ['reflect-metadata', './test/setup/database-env.ts'],
     // Keep test output readable: the app's request logs are not part of the assertions.
     env: { LOG_LEVEL: 'silent' },
   },
