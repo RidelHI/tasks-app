@@ -1,0 +1,21 @@
+# Allowlist: the build context holds only what the images need. Anything not listed here
+# (.env files, .git, node_modules, build output, local notes) never reaches Docker.
+*
+
+# npm workspace: root manifest, lockfile and settings, plus every workspace manifest
+# (npm ci checks the lockfile against all of them).
+!package.json
+!package-lock.json
+!.npmrc
+!apps/*/package.json
+
+# API sources and build settings.
+!apps/api/nest-cli.json
+!apps/api/tsconfig.json
+!apps/api/tsconfig.build.json
+!apps/api/src/
+
+# Never inside an image, even within the folders above: tests and local settings.
+**/*.spec.ts
+**/.env
+**/.env.*
