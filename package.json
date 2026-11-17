@@ -29,5 +29,8 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.6.1",
     "prettier": "^3.10.1"
+  },
+  "allowScripts": {
+    "@scarf/scarf": false
   }
 }
