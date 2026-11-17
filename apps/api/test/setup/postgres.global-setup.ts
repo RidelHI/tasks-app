@@ -46,7 +46,7 @@ export default async function setup(project: TestProject) {
 
 /** Builds the schema exactly as production does: through the registered migrations. */
 async function runMigrations(settings: DatabaseSettings): Promise<void> {
-  const dataSource = new DataSource({ ...buildDataSourceOptions(settings), logging: false });
+  const dataSource = new DataSource(buildDataSourceOptions(settings, false));
   await dataSource.initialize();
   try {
     await dataSource.runMigrations();
