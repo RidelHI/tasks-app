@@ -15,8 +15,11 @@ export interface DatabaseSettings {
 /** Queries slower than this are logged as warnings. */
 const SLOW_QUERY_THRESHOLD_MS = 500;
 
-/** Failed queries, warnings and migrations (slow queries are always logged). */
-const DEFAULT_LOGGING: LoggerOptions = ['error', 'warn', 'migration'];
+/**
+ * Warnings and migrations (slow queries are always logged). Failed queries are not: the error
+ * reaches whoever handles it, and the exception filter logs the unexpected ones with their stack.
+ */
+const DEFAULT_LOGGING: LoggerOptions = ['warn', 'migration'];
 
 /**
  * Single source of the connection options, used by the Nest app, the TypeORM CLI and the
