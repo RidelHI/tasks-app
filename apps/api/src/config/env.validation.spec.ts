@@ -6,6 +6,7 @@ describe('validateEnv', () => {
 
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(3000);
+    expect(env.LOG_LEVEL).toBe('info');
   });
 
   it('converts numeric strings to numbers', () => {
@@ -20,6 +21,14 @@ describe('validateEnv', () => {
 
   it('rejects an unknown NODE_ENV', () => {
     expect(() => validateEnv({ NODE_ENV: 'staging' })).toThrow(/NODE_ENV/);
+  });
+
+  it('accepts a known LOG_LEVEL', () => {
+    expect(validateEnv({ LOG_LEVEL: 'debug' }).LOG_LEVEL).toBe('debug');
+  });
+
+  it('rejects an unknown LOG_LEVEL', () => {
+    expect(() => validateEnv({ LOG_LEVEL: 'verbose' })).toThrow(/LOG_LEVEL/);
   });
 
   it('reports every invalid variable in a single error', () => {
