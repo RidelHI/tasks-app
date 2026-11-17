@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { docsContentSecurityPolicy } from './security/security-headers.js';
 
 /** Swagger UI path; the JSON document is served at `${OPENAPI_PATH}-json`. */
 export const OPENAPI_PATH = 'api/docs';
@@ -14,5 +15,7 @@ export function setupOpenApi(app: INestApplication): void {
     .setVersion('1.0')
     .build();
 
+  // Swagger UI needs scripts and styles, which the API's Content Security Policy forbids.
+  app.use(`/${OPENAPI_PATH}`, docsContentSecurityPolicy());
   SwaggerModule.setup(OPENAPI_PATH, app, () => SwaggerModule.createDocument(app, config));
 }
