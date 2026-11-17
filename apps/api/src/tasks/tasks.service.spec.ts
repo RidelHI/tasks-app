@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { CreateTaskDto } from './dto/create-task.dto.js';
+import { ListTasksQueryDto } from './dto/list-tasks-query.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { Task } from './task.entity.js';
 import type { TasksRepository } from './tasks.repository.js';
@@ -25,6 +26,7 @@ function aTask(overrides: Partial<Task> = {}): Task {
 function setup() {
   const repository = {
     create: vi.fn<TasksRepository['create']>(),
+    findPage: vi.fn<TasksRepository['findPage']>(),
     findById: vi.fn<TasksRepository['findById']>(),
     update: vi.fn<TasksRepository['update']>(),
     delete: vi.fn<TasksRepository['delete']>(),
@@ -68,6 +70,26 @@ describe('TasksService', () => {
       await service.create(createDto(data));
 
       expect(repository.create).toHaveBeenCalledWith(data);
+    });
+  });
+
+  describe('list', () => {
+    it('asks the repository for the filtered page', async () => {
+      const { service, repository } = setup();
+      const page = { items: [aTask({ status: 'done' })], totalItems: 7 };
+      repository.findPage.mockResolvedValue(page);
+      const query = plainToInstance(ListTasksQueryDto, {
+        status: 'done',
+        assignee: 'Jane Doe',
+        page: '2',
+        pageSize: '5',
+      });
+
+      await expect(service.list(query)).resolves.toBe(page);
+      expect(repository.findPage).toHaveBeenCalledWith(
+        { status: 'done', assignee: 'Jane Doe' },
+        { page: 2, pageSize: 5 },
+      );
     });
   });
 

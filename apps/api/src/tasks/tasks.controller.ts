@@ -9,6 +9,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -16,6 +17,8 @@ import { ApiParam, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { ApiProblem } from '../common/errors/api-problem.decorator.js';
 import { CreateTaskDto } from './dto/create-task.dto.js';
+import { ListTasksQueryDto } from './dto/list-tasks-query.dto.js';
+import { TaskPageDto } from './dto/task-page.dto.js';
 import { TaskResponseDto } from './dto/task-response.dto.js';
 import { UpdateTaskDto } from './dto/update-task.dto.js';
 import { TasksService } from './tasks.service.js';
@@ -37,6 +40,13 @@ export class TasksController {
     const collectionPath = request.originalUrl.split('?')[0]?.replace(/\/$/, '');
     response.location(`${collectionPath}/${task.id}`);
     return TaskResponseDto.fromEntity(task);
+  }
+
+  /** Lists the tasks, newest first, one page at a time. Filters combine with AND. */
+  @Get()
+  @ApiProblem(400, 'The query contains invalid or unknown parameters.')
+  async list(@Query() query: ListTasksQueryDto): Promise<TaskPageDto> {
+    return TaskPageDto.from(await this.tasks.list(query), query);
   }
 
   /** Returns one task. */

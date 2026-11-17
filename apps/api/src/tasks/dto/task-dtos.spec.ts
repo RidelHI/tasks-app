@@ -2,6 +2,7 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { toFieldErrors } from '../../common/errors/validation.exception.js';
 import { CreateTaskDto } from './create-task.dto.js';
+import { ListTasksQueryDto } from './list-tasks-query.dto.js';
 import { UpdateTaskDto } from './update-task.dto.js';
 
 /** Transforms and validates a body like the global ValidationPipe does. */
@@ -93,5 +94,41 @@ describe('UpdateTaskDto', () => {
     const { invalidFields } = await check(UpdateTaskDto, { title: '  ', dueDate: '2026-13-01' });
 
     expect(invalidFields).toEqual(['title', 'dueDate']);
+  });
+});
+
+describe('ListTasksQueryDto', () => {
+  it('defaults to the first page of 20 tasks, without filters', async () => {
+    const { dto, invalidFields } = await check(ListTasksQueryDto, {});
+
+    expect(invalidFields).toEqual([]);
+    expect(dto).toMatchObject({ page: 1, pageSize: 20 });
+    expect(dto.status).toBeUndefined();
+    expect(dto.assignee).toBeUndefined();
+  });
+
+  it('converts the query string values and trims the assignee', async () => {
+    const query = { page: '3', pageSize: '100', status: 'done', assignee: ' Jane Doe ' };
+
+    const { dto, invalidFields } = await check(ListTasksQueryDto, query);
+
+    expect(invalidFields).toEqual([]);
+    expect(dto).toMatchObject({ page: 3, pageSize: 100, status: 'done', assignee: 'Jane Doe' });
+  });
+
+  it.each([
+    ['page', 'zero', { page: '0' }],
+    ['page', 'not a number', { page: 'abc' }],
+    ['page', 'not an integer', { page: '1.5' }],
+    ['page', 'empty', { page: '' }],
+    ['page', 'beyond the sanity bound', { page: '1000001' }],
+    ['pageSize', 'above the maximum', { pageSize: '101' }],
+    ['pageSize', 'zero', { pageSize: '0' }],
+    ['status', 'unknown', { status: 'archived' }],
+    ['status', 'repeated', { status: ['pending', 'done'] }],
+    ['assignee', 'only whitespace', { assignee: '  ' }],
+    ['sort', 'not supported', { sort: 'title' }],
+  ])('rejects a %s that is %s', async (field, _reason, query) => {
+    expect((await check(ListTasksQueryDto, query)).invalidFields).toEqual([field]);
   });
 });

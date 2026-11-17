@@ -38,6 +38,10 @@ A change is done when build, lint and all tests pass.
   optional field. Build update DTOs with `PartialType(CreateDto, { skipNullProperties: false })`
   and mark optional fields stored in NOT NULL columns with `@IsOptionalNonNullable()`
   (`@IsOptional()` lets `null` through).
+- Lists are paginated: the query DTO extends `PageQueryDto` (`page` starts at 1, `pageSize`
+  is at most 100) and the response, a subclass of `PageResponseDto`, is
+  `{ items, page, pageSize, totalItems, totalPages }`. Order by a unique column last so pages
+  are stable.
 - Errors: throw Nest `HttpException`s (`NotFoundException`, …) with a clear, client-safe
   message; the global `ProblemDetailsFilter` renders RFC 9457 Problem Details
   (`application/problem+json`, with `requestId` and field `errors` for validation). Never

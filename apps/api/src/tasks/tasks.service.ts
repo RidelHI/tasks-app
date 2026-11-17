@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import type { Page } from '../common/pagination/page.js';
 import type { CreateTaskDto } from './dto/create-task.dto.js';
+import type { ListTasksQueryDto } from './dto/list-tasks-query.dto.js';
 import type { UpdateTaskDto } from './dto/update-task.dto.js';
 import { DEFAULT_TASK_STATUS } from './task-status.js';
 import type { Task } from './task.entity.js';
@@ -17,6 +19,11 @@ export class TasksService {
       assignee: dto.assignee ?? null,
       dueDate: dto.dueDate ?? null,
     });
+  }
+
+  list(query: ListTasksQueryDto): Promise<Page<Task>> {
+    const { status, assignee, page, pageSize } = query;
+    return this.tasks.findPage({ status, assignee }, { page, pageSize });
   }
 
   async findById(id: string): Promise<Task> {
