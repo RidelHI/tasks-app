@@ -98,6 +98,41 @@ describe('Database schema and migrations (e2e)', () => {
     expect(pending.upQueries.map((query) => query.query)).toEqual([]);
   });
 
+  it('creates the indexes of the list queries', async () => {
+    const indexes = await dataSource.query<{ name: string; definition: string }[]>(
+      `SELECT indexname AS name, indexdef AS definition
+         FROM pg_indexes
+        WHERE schemaname = 'public' AND tablename = 'tasks'
+        ORDER BY indexname`,
+    );
+
+    expect(indexes.map((index) => index.name)).toEqual([
+      'IDX_tasks_assignee_created_at',
+      'IDX_tasks_created_at',
+      'IDX_tasks_status_created_at',
+      'PK_tasks',
+    ]);
+    expect(indexes[0]?.definition).toContain('(lower((assignee)::text), created_at, id)');
+  });
+
+  it.each([
+    ['IDX_tasks_created_at', ''],
+    ['IDX_tasks_status_created_at', "WHERE status = 'pending'"],
+    ['IDX_tasks_assignee_created_at', "WHERE lower(assignee) = lower('Jane Doe')"],
+  ])('serves a page of the list from %s, without sorting', async (index, filter) => {
+    const plan = await dataSource.transaction(async (manager) => {
+      // A sequential scan is cheaper on a tiny test table: rule it out to see the index.
+      await manager.query('SET LOCAL enable_seqscan = off');
+      const rows = await manager.query<{ 'QUERY PLAN': string }[]>(
+        `EXPLAIN SELECT * FROM tasks ${filter} ORDER BY created_at DESC, id DESC LIMIT 20`,
+      );
+      return rows.map((row) => row['QUERY PLAN']).join('\n');
+    });
+
+    expect(plan).toContain(`Index Scan Backward using "${index}"`);
+    expect(plan).not.toMatch(/\bSort\b/);
+  });
+
   it('reverts every migration and applies them again', async () => {
     for (const _ of MIGRATIONS) {
       await dataSource.undoLastMigration();
