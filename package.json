@@ -12,7 +12,11 @@
   "scripts": {
     "prepare": "husky",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:up": "docker compose up --detach --wait db",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down --volumes && docker compose up --detach --wait db",
+    "db:logs": "docker compose logs --follow db"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
