@@ -77,5 +77,10 @@
         <span>{{ markAsLabel(status) }}</span>
       </button>
     }
+    <mat-divider />
+    <button mat-menu-item type="button" (click)="delete.emit(task)">
+      <mat-icon svgIcon="delete" />
+      <span>Delete</span>
+    </button>
   </ng-template>
 </mat-menu>

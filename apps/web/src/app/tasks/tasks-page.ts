@@ -1,5 +1,15 @@
 import { HttpStatusCode } from '@angular/common/http';
-import { Component, computed, effect, inject, input, linkedSignal, untracked } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  linkedSignal,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
@@ -10,6 +20,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { today } from '../core/calendar-date';
 import { errorMessage, hasStatus } from '../core/problem-details';
+import { confirm } from '../shared/confirm-dialog';
 import { Task, TASK_STATUS_LABELS, TaskPage, TaskQuery } from './task';
 import { TaskFilters } from './task-filters';
 import { TaskFormDialog, TaskFormDialogData, TaskFormDialogResult } from './task-form-dialog';
@@ -63,6 +74,8 @@ export class TasksPage {
   protected readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
   protected readonly errorMessage = errorMessage;
 
+  private readonly results = viewChild<ElementRef<HTMLElement>>('results');
+
   constructor() {
     // Past the last page (a shared link, or the last task of the page was deleted): show the
     // last page instead of an empty one.
@@ -115,10 +128,34 @@ export class TasksPage {
   }
 
   /** Moves a task to another status straight from the list. */
-  protected async changeStatus({ task, status }: TaskStatusChange): Promise<void> {
+  protected changeStatus({ task, status }: TaskStatusChange): Promise<void> {
+    return this.apply(
+      () => this.api.update(task.id, { status }),
+      `Marked as ${TASK_STATUS_LABELS[status].toLowerCase()}.`,
+    );
+  }
+
+  /** Deletes a task once the user confirms it. */
+  protected async deleteTask(task: Task): Promise<void> {
+    const confirmed = await confirm(this.dialog, {
+      title: 'Delete task?',
+      message: `"${task.title}" will be deleted. This cannot be undone.`,
+      confirmLabel: 'Delete',
+    });
+    if (confirmed) {
+      // Deleting the only task of the last page leaves that page empty: the list then moves
+      // back to the new last page on its own.
+      await this.apply(() => this.api.delete(task.id), 'Task deleted.');
+      // Its row, and the menu button the focus would return to, are gone.
+      this.results()?.nativeElement.focus();
+    }
+  }
+
+  /** Runs a change to one task, says how it went and refreshes the list if anything changed. */
+  private async apply(change: () => Promise<unknown>, done: string): Promise<void> {
     try {
-      await this.api.update(task.id, { status });
-      this.notify(`Marked as ${TASK_STATUS_LABELS[status].toLowerCase()}.`);
+      await change();
+      this.notify(done);
       this.tasks.reload();
     } catch (error) {
       if (hasStatus(error, HttpStatusCode.NotFound)) {
