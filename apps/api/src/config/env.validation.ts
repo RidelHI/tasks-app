@@ -1,10 +1,12 @@
 import { plainToInstance, Transform, type TransformFnParams, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsIn,
   IsInt,
   IsNotEmpty,
   IsString,
+  Matches,
   Max,
   Min,
   validateSync,
@@ -26,6 +28,18 @@ function toBoolean({ value }: TransformFnParams): unknown {
   return value;
 }
 
+/** Comma-separated list: "a, b,,c" becomes ["a", "b", "c"]; "" becomes []. */
+function toList({ value }: TransformFnParams): unknown {
+  if (typeof value !== 'string') return value;
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+/** An origin as browsers send it: scheme, host and optional port, without path or slash. */
+const ORIGIN = /^https?:\/\/[a-z0-9.-]+(:\d{1,5})?$/i;
+
 /**
  * Single source of truth for the environment variables the API reads:
  * names, types, defaults and validation rules.
@@ -46,6 +60,15 @@ export class EnvironmentVariables {
   @Transform(toBoolean)
   @IsBoolean()
   SWAGGER_ENABLED: boolean = true;
+
+  /** Origins allowed to call the API from a browser (CORS). Empty: CORS disabled. */
+  @Transform(toList)
+  @IsArray()
+  @Matches(ORIGIN, {
+    each: true,
+    message: 'each value in CORS_ORIGINS must be an origin like https://app.example.com',
+  })
+  CORS_ORIGINS: string[] = [];
 
   @IsString()
   @IsNotEmpty()

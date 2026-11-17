@@ -49,6 +49,8 @@ A change is done when build, lint and all tests pass.
   Document each error response with `@ApiProblem(status, description)`.
 - Security headers come from helmet in `configureApp()`: API responses get a CSP that forbids
   everything (`default-src 'none'`); only the Swagger UI path gets helmet's default CSP.
+  CORS is off unless `CORS_ORIGINS` lists origins (an allowlist, never `*`); a response header
+  a browser client must read goes in `CORS_EXPOSED_HEADERS` (`src/security/cors.ts`).
 - Read configuration only through `ConfigService<EnvironmentVariables, true>`, never
   `process.env`. New variables go in `src/config/env.validation.ts` and `.env.example`.
 - Log through `Logger` from `@nestjs/common` (`new Logger(MyClass.name)`); never
