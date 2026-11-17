@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import type { EnvironmentVariables } from '../config/env.validation.js';
+import { REDACTED_LOG_PATHS } from './redact.js';
 import { REQUEST_ID_HEADER, resolveRequestId } from './request-id.js';
 
 /**
@@ -30,7 +31,7 @@ import { REQUEST_ID_HEADER, resolveRequestId } from './request-id.js';
             if (res.statusCode >= 400) return 'warn';
             return 'info';
           },
-          redact: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+          redact: REDACTED_LOG_PATHS,
         },
       }),
     }),
