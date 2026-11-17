@@ -38,7 +38,8 @@ A change is done when build, lint and all tests pass.
 - Schema changes only through TypeORM migrations; never `synchronize: true`.
 - Tests ship with the feature: unit tests next to the code (`*.spec.ts`), e2e tests in
   `apps/api/test`. E2E tests build the app with `createTestApp()` (`test/utils`), which
-  applies the same `configureApp()` as `main.ts`.
+  applies the same `configureApp()` as `main.ts`, and run against a disposable PostgreSQL
+  container started once per run by Testcontainers (`test/setup`).
 
 ## Git
 
@@ -49,5 +50,6 @@ A change is done when build, lint and all tests pass.
 ## Boundaries
 
 - Never commit `.env` files or secrets.
-- Ask before adding a new dependency.
+- Ask before adding a new dependency. Install scripts are opt-in: review new ones with
+  `npm install-scripts ls` and record the decision in `allowScripts` (root `package.json`).
 - Never edit lockfiles by hand.
