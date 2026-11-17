@@ -1,13 +1,17 @@
 import { Component, computed, effect, inject, input, linkedSignal, untracked } from '@angular/core';
 import { MatButton } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIcon } from '@angular/material/icon';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { today } from '../core/calendar-date';
 import { errorMessage } from '../core/problem-details';
-import { TaskPage, TaskQuery } from './task';
+import { Task, TaskPage, TaskQuery } from './task';
 import { TaskFilters } from './task-filters';
+import { TaskFormDialog, TaskFormDialogData, TaskFormDialogResult } from './task-form-dialog';
 import { PAGE_SIZE_OPTIONS, parseTaskQuery, toUrlParams } from './task-query';
 import { TaskTable } from './task-table';
 import { TasksApi } from './tasks-api';
@@ -25,6 +29,8 @@ import { TasksApi } from './tasks-api';
 export class TasksPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   /** Query parameters, bound by the router (`withComponentInputBinding`). */
   readonly status = input<string>();
@@ -79,6 +85,35 @@ export class TasksPage {
     // A new page size starts over from the first page.
     const page = pageSize === this.query().pageSize ? event.pageIndex + 1 : 1;
     this.show({ page, pageSize });
+  }
+
+  /** Opens the form to create a task, or to edit `task`, and refreshes the list after a save. */
+  protected async openForm(task?: Task): Promise<void> {
+    const dialogRef = this.dialog.open<TaskFormDialog, TaskFormDialogData, TaskFormDialogResult>(
+      TaskFormDialog,
+      { data: { task }, width: '560px' },
+    );
+    const result = await firstValueFrom(dialogRef.afterClosed());
+
+    if (result === 'missing') {
+      this.notify('This task no longer exists.');
+      this.tasks.reload();
+    } else if (result && task) {
+      this.notify('Task saved.');
+      this.tasks.reload();
+    } else if (result) {
+      this.notify('Task created.');
+      // The newest tasks come first: show the first page.
+      if (untracked(this.query).page === 1) {
+        this.tasks.reload();
+      } else {
+        this.show({ page: 1 });
+      }
+    }
+  }
+
+  private notify(message: string): void {
+    this.snackBar.open(message, undefined, { duration: 4000 });
   }
 
   /** Navigates to the list with `changes` applied to the current query. */

@@ -7,8 +7,10 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 import { MATERIAL_ANIMATIONS } from '@angular/material/core';
 import { MatIconTestingModule } from '@angular/material/icon/testing';
 import { MatInputHarness } from '@angular/material/input/testing';
+import { MatMenuHarness } from '@angular/material/menu/testing';
 import { MatPaginatorHarness } from '@angular/material/paginator/testing';
 import { MatSelectHarness } from '@angular/material/select/testing';
+import { MatSnackBarHarness } from '@angular/material/snack-bar/testing';
 import { MatTableHarness } from '@angular/material/table/testing';
 import { provideRouter, Router, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
@@ -218,5 +220,90 @@ describe('TasksPage', () => {
     );
 
     expect(currentUrl()).toBe('/tasks?page=2');
+  });
+
+  describe('creating and editing tasks', () => {
+    /** Dialogs, menus and snack bars render outside the page, at the end of the document. */
+    const overlays = () => TestbedHarnessEnvironment.documentRootLoader(harness.fixture);
+
+    const dialogTitle = async () =>
+      overlays().getHarness(MatInputHarness.with({ ancestor: 'mat-dialog-container' }));
+
+    /** Clicks a dialog button that saves and answers the save and the reload of the list. */
+    async function saving(
+      text: string,
+      save: { method: string; url: string; body: object; status?: number },
+    ) {
+      const button = await overlays().getHarness(MatButtonHarness.with({ text }));
+      const click = button.click();
+      const status = save.status ?? 200;
+      await vi.waitFor(() => {
+        http
+          .expectOne({ method: save.method, url: save.url })
+          .flush(save.body, { status, statusText: String(status) });
+      });
+      return click;
+    }
+
+    const snackBarMessage = async () =>
+      (await overlays().getHarness(MatSnackBarHarness)).getMessage();
+
+    it('creates a task and shows the first page, where it appears', async () => {
+      await open(
+        '/tasks?page=2',
+        '/api/v1/tasks?page=2&pageSize=20',
+        aPage([aTask()], { page: 2, totalItems: 21, totalPages: 2 }),
+      );
+
+      await (await loader.getHarness(MatButtonHarness.with({ text: 'New task' }))).click();
+      await (await dialogTitle()).setValue('Write the README');
+      const created = aTask({ title: 'Write the README' });
+      const click = saving('Create', { method: 'POST', url: '/api/v1/tasks', body: created });
+      await respond('/api/v1/tasks?page=1&pageSize=20', aPage([created]));
+      await click;
+
+      expect(currentUrl()).toBe('/tasks');
+      expect(await snackBarMessage()).toBe('Task created.');
+      expect(texts('.title')).toEqual(['Write the README']);
+    });
+
+    it('edits a task from its menu and refreshes the list', async () => {
+      const task = aTask({ title: 'Write the README' });
+      await open('/tasks', '/api/v1/tasks?page=1&pageSize=20', aPage([task]));
+
+      await (await loader.getHarness(MatMenuHarness)).clickItem({ text: 'Edit' });
+      const title = await dialogTitle();
+      expect(await title.getValue()).toBe('Write the README');
+      await title.setValue('Write the README file');
+      const saved = { ...task, title: 'Write the README file' };
+      const click = saving('Save', {
+        method: 'PATCH',
+        url: `/api/v1/tasks/${task.id}`,
+        body: saved,
+      });
+      await respond('/api/v1/tasks?page=1&pageSize=20', aPage([saved]));
+      await click;
+
+      expect(await snackBarMessage()).toBe('Task saved.');
+      expect(texts('.title')).toEqual(['Write the README file']);
+    });
+
+    it('says so when the task was deleted while being edited', async () => {
+      const task = aTask();
+      await open('/tasks', '/api/v1/tasks?page=1&pageSize=20', aPage([task]));
+
+      await (await loader.getHarness(MatMenuHarness)).clickItem({ text: 'Edit' });
+      await (await dialogTitle()).setValue('Renamed');
+      const click = saving('Save', {
+        method: 'PATCH',
+        url: `/api/v1/tasks/${task.id}`,
+        body: aProblem(404, 'Not Found', `Task ${task.id} was not found.`),
+        status: 404,
+      });
+      await respond('/api/v1/tasks?page=1&pageSize=20', aPage([]));
+      await click;
+
+      expect(await snackBarMessage()).toBe('This task no longer exists.');
+    });
   });
 });

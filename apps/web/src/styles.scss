@@ -1,6 +1,10 @@
+@use '@angular/cdk' as cdk;
 @use '@angular/material' as mat;
 // Roboto served from this app (no third-party font requests), variable weight axis.
 @use '@fontsource-variable/roboto';
+
+// `.cdk-visually-hidden`: text for assistive technology only.
+@include cdk.a11y-visually-hidden();
 
 $font-family: ('Roboto Variable', system-ui, sans-serif);
 

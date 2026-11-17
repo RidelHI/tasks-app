@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>{{ task ? 'Edit task' : 'New task' }}</h2>
+
+<form [formRoot]="taskForm">
+  <mat-dialog-content>
+    @for (error of taskForm().errors(); track error) {
+      <p class="form-error" role="alert">{{ messageOf(error) }}</p>
+    }
+
+    <mat-form-field>
+      <mat-label>Title</mat-label>
+      <input matInput autocomplete="off" [formField]="taskForm.title" />
+      @for (error of taskForm.title().errors(); track error) {
+        <mat-error>{{ messageOf(error) }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Description</mat-label>
+      <textarea matInput rows="4" [formField]="taskForm.description"></textarea>
+      @for (error of taskForm.description().errors(); track error) {
+        <mat-error>{{ messageOf(error) }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field>
+        <mat-label>Status</mat-label>
+        <mat-select [formField]="taskForm.status">
+          @for (option of statuses; track option) {
+            <mat-option [value]="option">{{ statusLabels[option] }}</mat-option>
+          }
+        </mat-select>
+        @for (error of taskForm.status().errors(); track error) {
+          <mat-error>{{ messageOf(error) }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Assignee</mat-label>
+        <input matInput autocomplete="off" [formField]="taskForm.assignee" />
+        @for (error of taskForm.assignee().errors(); track error) {
+          <mat-error>{{ messageOf(error) }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field>
+      <mat-label>Due date</mat-label>
+      <input matInput [matDatepicker]="picker" [formField]="taskForm.dueDate" />
+      <mat-hint>MM/DD/YYYY</mat-hint>
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-datepicker #picker />
+      @for (error of taskForm.dueDate().errors(); track error) {
+        <mat-error>{{ messageOf(error) }}</mat-error>
+      }
+    </mat-form-field>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button matButton type="button" mat-dialog-close>Cancel</button>
+    <button matButton="filled" type="submit" [disabled]="taskForm().submitting()">
+      {{ task ? 'Save' : 'Create' }}
+    </button>
+  </mat-dialog-actions>
+</form>
