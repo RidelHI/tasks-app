@@ -5,6 +5,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { MatButtonHarness } from '@angular/material/button/testing';
 import { MATERIAL_ANIMATIONS } from '@angular/material/core';
+import { MatDialogHarness } from '@angular/material/dialog/testing';
 import { MatIconTestingModule } from '@angular/material/icon/testing';
 import { MatInputHarness } from '@angular/material/input/testing';
 import { MatMenuHarness } from '@angular/material/menu/testing';
@@ -236,7 +237,7 @@ describe('TasksPage', () => {
       await menu.open();
 
       const items = await Promise.all((await menu.getItems()).map((item) => item.getText()));
-      expect(items).toEqual(['Edit', 'Mark as in progress', 'Mark as done']);
+      expect(items).toEqual(['Edit', 'Mark as in progress', 'Mark as done', 'Delete']);
     });
 
     it('patches only the status and refreshes the list', async () => {
@@ -274,6 +275,84 @@ describe('TasksPage', () => {
       expect(await (await overlays().getHarness(MatSnackBarHarness)).getMessage()).toBe(
         'Something went wrong on our side. Try again in a moment.',
       );
+    });
+  });
+
+  describe('deleting a task', () => {
+    const overlays = () => TestbedHarnessEnvironment.documentRootLoader(harness.fixture);
+    const task = aTask({ title: 'Write the README' });
+    const url = `/api/v1/tasks/${task.id}`;
+
+    async function askToDelete() {
+      await (await loader.getHarness(MatMenuHarness)).clickItem({ text: 'Delete' });
+      return overlays().getHarness(MatDialogHarness);
+    }
+
+    it('asks first, naming the task', async () => {
+      await open('/tasks', '/api/v1/tasks?page=1&pageSize=20', aPage([task]));
+
+      const dialog = await askToDelete();
+
+      expect(await dialog.getRole()).toBe('alertdialog');
+      expect(await dialog.getTitleText()).toBe('Delete task?');
+      expect(await dialog.getContentText()).toBe(
+        '"Write the README" will be deleted. This cannot be undone.',
+      );
+    });
+
+    it('keeps the task when the user cancels', async () => {
+      await open('/tasks', '/api/v1/tasks?page=1&pageSize=20', aPage([task]));
+
+      await (await askToDelete()).close();
+
+      http.expectNone(url);
+    });
+
+    it('deletes the task once confirmed and refreshes the list', async () => {
+      await open('/tasks', '/api/v1/tasks?page=1&pageSize=20', aPage([task]));
+      await askToDelete();
+
+      const confirm = await overlays().getHarness(
+        MatButtonHarness.with({ text: 'Delete', ancestor: 'mat-dialog-container' }),
+      );
+      const click = confirm.click();
+      await vi.waitFor(() => {
+        http.expectOne({ method: 'DELETE', url }).flush(null, { status: 204, statusText: '' });
+      });
+      await respond('/api/v1/tasks?page=1&pageSize=20', aPage([]));
+      await click;
+
+      expect(await (await overlays().getHarness(MatSnackBarHarness)).getMessage()).toBe(
+        'Task deleted.',
+      );
+      expect(text()).toContain('No tasks yet');
+      // The focus lands on the list, since the row and its menu button are gone.
+      expect(document.activeElement?.getAttribute('aria-label')).toBe('Task list');
+    });
+
+    it('moves back a page after deleting the only task of the last one', async () => {
+      await open(
+        '/tasks?page=2',
+        '/api/v1/tasks?page=2&pageSize=20',
+        aPage([task], { page: 2, totalItems: 21, totalPages: 2 }),
+      );
+      await askToDelete();
+
+      const confirm = await overlays().getHarness(
+        MatButtonHarness.with({ text: 'Delete', ancestor: 'mat-dialog-container' }),
+      );
+      const click = confirm.click();
+      await vi.waitFor(() => {
+        http.expectOne({ method: 'DELETE', url }).flush(null, { status: 204, statusText: '' });
+      });
+      await answer(
+        '/api/v1/tasks?page=2&pageSize=20',
+        aPage([], { page: 2, totalItems: 20, totalPages: 1 }),
+      );
+      await respond('/api/v1/tasks?page=1&pageSize=20', aPage([aTask()], { totalItems: 20 }));
+      await click;
+
+      expect(currentUrl()).toBe('/tasks');
     });
   });
 

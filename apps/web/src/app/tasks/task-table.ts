@@ -43,6 +43,7 @@ export class TaskTable {
 
   readonly edit = output<Task>();
   readonly statusChange = output<TaskStatusChange>();
+  readonly delete = output<Task>();
 
   protected readonly columns = ['title', 'status', 'assignee', 'dueDate', 'actions'];
   protected readonly statusIcons = STATUS_ICONS;
