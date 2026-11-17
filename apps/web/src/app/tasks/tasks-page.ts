@@ -1,3 +1,4 @@
+import { HttpStatusCode } from '@angular/common/http';
 import { Component, computed, effect, inject, input, linkedSignal, untracked } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,12 +9,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { today } from '../core/calendar-date';
-import { errorMessage } from '../core/problem-details';
-import { Task, TaskPage, TaskQuery } from './task';
+import { errorMessage, hasStatus } from '../core/problem-details';
+import { Task, TASK_STATUS_LABELS, TaskPage, TaskQuery } from './task';
 import { TaskFilters } from './task-filters';
 import { TaskFormDialog, TaskFormDialogData, TaskFormDialogResult } from './task-form-dialog';
 import { PAGE_SIZE_OPTIONS, parseTaskQuery, toUrlParams } from './task-query';
-import { TaskTable } from './task-table';
+import { TaskStatusChange, TaskTable } from './task-table';
 import { TasksApi } from './tasks-api';
 
 /**
@@ -31,6 +32,7 @@ export class TasksPage {
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly api = inject(TasksApi);
 
   /** Query parameters, bound by the router (`withComponentInputBinding`). */
   readonly status = input<string>();
@@ -46,7 +48,7 @@ export class TasksPage {
       pageSize: this.pageSize(),
     }),
   );
-  protected readonly tasks = inject(TasksApi).listResource(this.query);
+  protected readonly tasks = this.api.listResource(this.query);
 
   /** The last page received: it stays on screen while the next one loads, so nothing flickers. */
   protected readonly taskPage = linkedSignal<TaskPage | undefined, TaskPage | undefined>({
@@ -108,6 +110,23 @@ export class TasksPage {
         this.tasks.reload();
       } else {
         this.show({ page: 1 });
+      }
+    }
+  }
+
+  /** Moves a task to another status straight from the list. */
+  protected async changeStatus({ task, status }: TaskStatusChange): Promise<void> {
+    try {
+      await this.api.update(task.id, { status });
+      this.notify(`Marked as ${TASK_STATUS_LABELS[status].toLowerCase()}.`);
+      this.tasks.reload();
+    } catch (error) {
+      if (hasStatus(error, HttpStatusCode.NotFound)) {
+        this.notify('This task no longer exists.');
+        this.tasks.reload();
+      } else {
+        // Nothing changed: the list stays as it is.
+        this.notify(errorMessage(error));
       }
     }
   }

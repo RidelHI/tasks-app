@@ -222,6 +222,61 @@ describe('TasksPage', () => {
     expect(currentUrl()).toBe('/tasks?page=2');
   });
 
+  describe('changing the status from the list', () => {
+    const overlays = () => TestbedHarnessEnvironment.documentRootLoader(harness.fixture);
+    const task = aTask({ title: 'Write the README', status: 'pending' });
+    const url = `/api/v1/tasks/${task.id}`;
+
+    beforeEach(async () => {
+      await open('/tasks', '/api/v1/tasks?page=1&pageSize=20', aPage([task]));
+    });
+
+    it('offers the statuses the task is not in', async () => {
+      const menu = await loader.getHarness(MatMenuHarness);
+      await menu.open();
+
+      const items = await Promise.all((await menu.getItems()).map((item) => item.getText()));
+      expect(items).toEqual(['Edit', 'Mark as in progress', 'Mark as done']);
+    });
+
+    it('patches only the status and refreshes the list', async () => {
+      const click = (await loader.getHarness(MatMenuHarness)).clickItem({ text: 'Mark as done' });
+      let sent: unknown;
+      await vi.waitFor(() => {
+        const request = http.expectOne({ method: 'PATCH', url });
+        sent = request.request.body;
+        request.flush({ ...task, status: 'done' });
+      });
+      await respond('/api/v1/tasks?page=1&pageSize=20', aPage([{ ...task, status: 'done' }]));
+      await click;
+
+      expect(sent).toEqual({ status: 'done' });
+      expect(await (await overlays().getHarness(MatSnackBarHarness)).getMessage()).toBe(
+        'Marked as done.',
+      );
+    });
+
+    it('explains a failure and leaves the list as it was', async () => {
+      const click = (await loader.getHarness(MatMenuHarness)).clickItem({
+        text: 'Mark as in progress',
+      });
+      await vi.waitFor(() => {
+        http
+          .expectOne({ method: 'PATCH', url })
+          .flush(aProblem(503, 'Service Unavailable', 'The service is not ready.'), {
+            status: 503,
+            statusText: 'Service Unavailable',
+          });
+      });
+      await click;
+
+      http.expectNone('/api/v1/tasks?page=1&pageSize=20');
+      expect(await (await overlays().getHarness(MatSnackBarHarness)).getMessage()).toBe(
+        'Something went wrong on our side. Try again in a moment.',
+      );
+    });
+  });
+
   describe('creating and editing tasks', () => {
     /** Dialogs, menus and snack bars render outside the page, at the end of the document. */
     const overlays = () => TestbedHarnessEnvironment.documentRootLoader(harness.fixture);
