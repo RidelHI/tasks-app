@@ -1,6 +1,32 @@
-# Local development infrastructure. Start it with `npm run db:up`.
+# Local environment, in two ways:
+# - `npm run db:up`: only PostgreSQL, to develop with `npm run dev:api` and `npm run dev:web`.
+# - `npm run app:up`: the whole app built as for production (profile `app`), on
+#   http://localhost:8080. nginx serves the web app and forwards /api to the API.
 # Every variable has a default, so no .env is required (see .env.example to override).
 name: tasks-app
+
+# The app's containers run as non-root users, with a read-only file system and no Linux
+# capabilities: a compromised process can neither change the image nor gain privileges.
+x-hardening: &hardening
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+
+x-api-image: &api-image
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+  image: tasks-app/api:local
+
+x-api-environment: &api-environment
+  NODE_ENV: production
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_USERNAME: ${POSTGRES_USER:-tasks}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:-tasks}
+  DB_NAME: ${POSTGRES_DB:-tasks}
 
 services:
   db:
@@ -23,6 +49,68 @@ services:
       timeout: 3s
       retries: 10
       start_period: 10s
+
+  # Applies pending migrations, then exits. A deployment step of its own: the API never migrates
+  # at startup, where several replicas would race to do it.
+  migrate:
+    <<: [*hardening, *api-image]
+    profiles: [app]
+    command:
+      [node, /app/node_modules/typeorm/cli.js, migration:run, -d, dist/database/data-source.js]
+    environment: *api-environment
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: [*hardening, *api-image]
+    profiles: [app]
+    # A minimal init process as PID 1: it forwards signals to node and reaps child processes.
+    init: true
+    restart: unless-stopped
+    environment:
+      <<: *api-environment
+      # The API documentation is part of this project; turn it off in a real deployment.
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
+      # nginx is the only proxy in front of the API: the client IP is the address it adds.
+      TRUST_PROXY_HOPS: 1
+    # Not published: the API is reachable only through nginx.
+    expose: ['3000']
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      # Readiness (database included): Compose starts nginx once the API can serve requests.
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/api/health/ready').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  web:
+    <<: *hardening
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: tasks-app/web:local
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      # 127.0.0.1, not localhost: localhost resolves to IPv6 first and nginx listens on IPv4.
+      test: [CMD, wget, --quiet, --spider, http://127.0.0.1:8080/healthz]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
 
 volumes:
   db-data:
