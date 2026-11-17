@@ -33,6 +33,10 @@ A change is done when build, lint and all tests pass.
 - One module per feature; controller → service → repository. Input is validated with
   class-validator DTOs (unknown properties are rejected; conversions are explicit with
   `@Type`/`@Transform`); responses use response DTOs, never entities.
+- Errors: throw Nest `HttpException`s (`NotFoundException`, …) with a clear, client-safe
+  message; the global `ProblemDetailsFilter` renders RFC 9457 Problem Details
+  (`application/problem+json`, with `requestId` and field `errors` for validation). Never
+  build error responses by hand; any other error becomes a generic 500 and is logged.
 - Read configuration only through `ConfigService<EnvironmentVariables, true>`, never
   `process.env`. New variables go in `src/config/env.validation.ts` and `.env.example`.
 - Log through `Logger` from `@nestjs/common` (`new Logger(MyClass.name)`); never
