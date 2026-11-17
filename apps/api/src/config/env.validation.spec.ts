@@ -49,6 +49,33 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ ...required, SWAGGER_ENABLED: raw })).toThrow(/SWAGGER_ENABLED/);
   });
 
+  describe('CORS_ORIGINS', () => {
+    it('is empty by default: CORS disabled', () => {
+      expect(validateEnv(required).CORS_ORIGINS).toEqual([]);
+    });
+
+    it.each([
+      ['', []],
+      ['https://app.example.com', ['https://app.example.com']],
+      [
+        ' https://app.example.com , http://localhost:4200,,',
+        ['https://app.example.com', 'http://localhost:4200'],
+      ],
+    ])('parses %j as a list of origins', (raw, origins) => {
+      expect(validateEnv({ ...required, CORS_ORIGINS: raw }).CORS_ORIGINS).toEqual(origins);
+    });
+
+    it.each([
+      ['a wildcard', '*'],
+      ['a trailing slash', 'https://app.example.com/'],
+      ['a path', 'https://app.example.com/app'],
+      ['no scheme', 'app.example.com'],
+      ['another scheme', 'ftp://app.example.com'],
+    ])('rejects an origin with %s', (_case, raw) => {
+      expect(() => validateEnv({ ...required, CORS_ORIGINS: raw })).toThrow(/CORS_ORIGINS/);
+    });
+  });
+
   it('requires the database credentials', () => {
     const act = () => validateEnv({});
 

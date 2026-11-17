@@ -1,8 +1,11 @@
 import { type INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import { ProblemDetailsFilter } from './common/errors/problem-details.filter.js';
 import { ValidationException } from './common/errors/validation.exception.js';
+import type { EnvironmentVariables } from './config/env.validation.js';
+import { buildCorsOptions } from './security/cors.js';
 import { securityHeaders } from './security/security-headers.js';
 
 export const API_PREFIX = 'api';
@@ -17,6 +20,12 @@ export function configureApp(app: INestApplication): INestApplication {
 
   // First middleware, so every response carries the headers (errors and 404s included).
   app.use(securityHeaders());
+
+  const config = app.get(ConfigService<EnvironmentVariables, true>);
+  const cors = buildCorsOptions(config.get('CORS_ORIGINS', { infer: true }));
+  if (cors) {
+    app.enableCors(cors);
+  }
 
   app.setGlobalPrefix(API_PREFIX);
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });

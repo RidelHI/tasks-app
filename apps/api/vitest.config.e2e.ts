@@ -11,7 +11,7 @@ export default defineConfig({
     // One disposable PostgreSQL container per run (requires Docker).
     globalSetup: ['./test/setup/postgres.global-setup.ts'],
     setupFiles: ['reflect-metadata', './test/setup/database-env.ts'],
-    // Keep test output readable: the app's request logs are not part of the assertions.
-    env: { LOG_LEVEL: 'silent' },
+    // Silent logs keep the output readable; one allowed origin lets the CORS tests run.
+    env: { LOG_LEVEL: 'silent', CORS_ORIGINS: 'http://localhost:4200' },
   },
 });
