@@ -1,5 +1,14 @@
 import { plainToInstance, Transform, type TransformFnParams, Type } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, Max, Min, validateSync } from 'class-validator';
+import {
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Max,
+  Min,
+  validateSync,
+} from 'class-validator';
 
 export const ENVIRONMENTS = ['development', 'production', 'test'] as const;
 export type Environment = (typeof ENVIRONMENTS)[number];
@@ -37,6 +46,30 @@ export class EnvironmentVariables {
   @Transform(toBoolean)
   @IsBoolean()
   SWAGGER_ENABLED: boolean = true;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_HOST: string = 'localhost';
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  DB_PORT: number = 5432;
+
+  // Credentials have no defaults on purpose: a missing value must stop the app, never fall
+  // back to a hard-coded password.
+  @IsString()
+  @IsNotEmpty()
+  DB_USERNAME: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_PASSWORD: string;
+
+  @IsString()
+  @IsNotEmpty()
+  DB_NAME: string;
 }
 
 /**

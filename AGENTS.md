@@ -11,14 +11,16 @@ Task management app in an npm workspaces monorepo:
 
 ## Commands (run from the repository root)
 
-| Task                        | Command                                       |
-| --------------------------- | --------------------------------------------- |
-| Install dependencies        | `npm install`                                 |
-| Start PostgreSQL (Docker)   | `npm run db:up`                               |
-| Run the API in watch mode   | `npm run dev:api`                             |
-| Build / lint / unit tests   | `npm run build` · `npm run lint` · `npm test` |
-| E2E tests (requires Docker) | `npm run test:e2e`                            |
-| Format                      | `npm run format`                              |
+| Task                        | Command                                              |
+| --------------------------- | ---------------------------------------------------- |
+| Install dependencies        | `npm install`                                        |
+| Local API settings (once)   | copy `apps/api/.env.example` to `apps/api/.env`      |
+| Start PostgreSQL (Docker)   | `npm run db:up`                                      |
+| Apply / revert migrations   | `npm run migration:run` · `npm run migration:revert` |
+| Run the API in watch mode   | `npm run dev:api`                                    |
+| Build / lint / unit tests   | `npm run build` · `npm run lint` · `npm test`        |
+| E2E tests (requires Docker) | `npm run test:e2e`                                   |
+| Format                      | `npm run format`                                     |
 
 A change is done when build, lint and all tests pass.
 
@@ -35,7 +37,12 @@ A change is done when build, lint and all tests pass.
   `process.env`. New variables go in `src/config/env.validation.ts` and `.env.example`.
 - Log through `Logger` from `@nestjs/common` (`new Logger(MyClass.name)`); never
   `console.log`. Logs are JSON (pino) outside development and carry the request id.
-- Schema changes only through TypeORM migrations; never `synchronize: true`.
+- Database: columns are snake_case in PostgreSQL (`SnakeNamingStrategy`), camelCase in code.
+  Entities and migrations are registered explicitly in `src/database/entities.ts` and
+  `src/database/migrations/index.ts` (no globs). Schema changes only through migrations;
+  never `synchronize: true`. Workflow: change the entity →
+  `npm run migration:generate -w @tasks/api -- src/database/migrations/<Name>` → review the
+  generated SQL → register the class → `npm run migration:run`.
 - Tests ship with the feature: unit tests next to the code (`*.spec.ts`), e2e tests in
   `apps/api/test`. E2E tests build the app with `createTestApp()` (`test/utils`), which
   applies the same `configureApp()` as `main.ts`, and run against a disposable PostgreSQL

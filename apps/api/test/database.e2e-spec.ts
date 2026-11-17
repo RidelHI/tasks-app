@@ -1,22 +1,47 @@
-import { Client } from 'pg';
+import type { INestApplication } from '@nestjs/common';
+import type { App } from 'supertest/types.js';
+import { DataSource } from 'typeorm';
+import { createTestApp } from './utils/create-test-app.js';
 
-describe('E2E database (Testcontainers)', () => {
-  it('provides a reachable PostgreSQL 18 through the DB_* variables', async () => {
-    const client = new Client({
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      user: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-    });
+describe('Database connection (e2e)', () => {
+  let app: INestApplication<App>;
 
-    await client.connect();
-    try {
-      const { rows } = await client.query<{ server_version: string }>('SHOW server_version');
+  beforeAll(async () => {
+    app = await createTestApp();
+  });
 
-      expect(rows[0]?.server_version).toMatch(/^18\./);
-    } finally {
-      await client.end();
-    }
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('connects the app to the PostgreSQL 18 test database', async () => {
+    const dataSource = app.get(DataSource);
+
+    const [row] = await dataSource.query<{ database: string; version: string }[]>(
+      'SELECT current_database() AS database, current_setting($1) AS version',
+      ['server_version'],
+    );
+
+    expect(dataSource.isInitialized).toBe(true);
+    expect(row).toEqual({ database: 'tasks_test', version: expect.stringMatching(/^18\./) });
+  });
+
+  it('keeps track of applied migrations', async () => {
+    const dataSource = app.get(DataSource);
+
+    const [row] = await dataSource.query<{ exists: boolean }[]>(
+      "SELECT to_regclass('public.migrations') IS NOT NULL AS exists",
+    );
+
+    expect(row?.exists).toBe(true);
+  });
+
+  it('closes the connection when the app shuts down', async () => {
+    const shortLived = await createTestApp();
+    const dataSource = shortLived.get(DataSource);
+
+    await shortLived.close();
+
+    expect(dataSource.isInitialized).toBe(false);
   });
 });
