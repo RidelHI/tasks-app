@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
@@ -8,7 +10,10 @@ describe('routes', () => {
   let harness: RouterTestingHarness;
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({ providers: [provideRouter(routes)] });
+    TestBed.configureTestingModule({
+      // The task list loads its data; the request is left unanswered here.
+      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
+    });
     harness = await RouterTestingHarness.create();
   });
 

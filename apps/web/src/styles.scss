@@ -15,7 +15,8 @@ html {
     (
       color: (
         primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
+        // Green accent: marks finished tasks apart from the blue of the rest of the UI.
+        tertiary: mat.$green-palette,
       ),
       typography: (
         plain-family: $font-family,
