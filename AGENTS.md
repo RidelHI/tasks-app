@@ -30,13 +30,19 @@ A change is done when build, lint and all tests pass.
 - ESM: relative imports end in `.js` (`import { X } from './x.js'`).
 - Routes are served under `/api/v1` (global prefix + URI versioning in `src/app.setup.ts`).
   OpenAPI docs at `/api/docs`; document DTOs with JSDoc comments (Swagger CLI plugin).
-- One module per feature; controller → service → repository. Input is validated with
+- One module per feature; controller → service → repository (a class wrapping TypeORM's
+  `Repository`, so services never use TypeORM directly). Input is validated with
   class-validator DTOs (unknown properties are rejected; conversions are explicit with
-  `@Type`/`@Transform`); responses use response DTOs, never entities.
+  `@Type`/`@Transform`); controllers map entities to response DTOs, never return entities.
+- `PATCH` uses JSON Merge Patch semantics: absent fields stay unchanged, `null` clears an
+  optional field. Build update DTOs with `PartialType(CreateDto, { skipNullProperties: false })`
+  and mark optional fields stored in NOT NULL columns with `@IsOptionalNonNullable()`
+  (`@IsOptional()` lets `null` through).
 - Errors: throw Nest `HttpException`s (`NotFoundException`, …) with a clear, client-safe
   message; the global `ProblemDetailsFilter` renders RFC 9457 Problem Details
   (`application/problem+json`, with `requestId` and field `errors` for validation). Never
   build error responses by hand; any other error becomes a generic 500 and is logged.
+  Document each error response with `@ApiProblem(status, description)`.
 - Read configuration only through `ConfigService<EnvironmentVariables, true>`, never
   `process.env`. New variables go in `src/config/env.validation.ts` and `.env.example`.
 - Log through `Logger` from `@nestjs/common` (`new Logger(MyClass.name)`); never

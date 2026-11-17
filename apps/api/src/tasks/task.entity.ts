@@ -1,5 +1,10 @@
 import { Check, Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
-import { TASK_STATUSES, type TaskStatus } from './task-status.js';
+import { DEFAULT_TASK_STATUS, TASK_STATUSES, type TaskStatus } from './task-status.js';
+import {
+  TASK_ASSIGNEE_MAX_LENGTH,
+  TASK_DESCRIPTION_MAX_LENGTH,
+  TASK_TITLE_MAX_LENGTH,
+} from './task.constants.js';
 
 const STATUS_VALUES = TASK_STATUSES.map((status) => `'${status}'`).join(', ');
 
@@ -10,17 +15,17 @@ export class Task {
   @PrimaryColumn({ type: 'uuid', default: () => 'uuidv7()', primaryKeyConstraintName: 'PK_tasks' })
   id: string;
 
-  @Column({ type: 'varchar', length: 200 })
+  @Column({ type: 'varchar', length: TASK_TITLE_MAX_LENGTH })
   title: string;
 
-  @Column({ type: 'varchar', length: 2000, nullable: true })
+  @Column({ type: 'varchar', length: TASK_DESCRIPTION_MAX_LENGTH, nullable: true })
   description: string | null;
 
-  @Column({ type: 'varchar', length: 20, default: 'pending' })
+  @Column({ type: 'varchar', length: 20, default: DEFAULT_TASK_STATUS })
   status: TaskStatus;
 
   /** Free-text name of the person responsible (no user accounts yet). */
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: TASK_ASSIGNEE_MAX_LENGTH, nullable: true })
   assignee: string | null;
 
   /** Calendar date without time zone; the pg driver returns it as `YYYY-MM-DD`. */

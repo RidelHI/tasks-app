@@ -3,8 +3,7 @@ import { inject } from 'vitest';
 import { buildDataSourceOptions } from '../src/database/data-source-options.js';
 import { MIGRATIONS } from '../src/database/migrations/index.js';
 import { Task } from '../src/tasks/task.entity.js';
-
-const UUID_V7 = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+import { UUID_V7 } from './utils/uuid.js';
 
 /** PostgreSQL error codes (SQLSTATE) the schema must raise. */
 const CHECK_VIOLATION = '23514';
