@@ -1,0 +1,24 @@
+{
+  "name": "tasks-app",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Task management app: NestJS REST API + Angular Material web client",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": "^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.1",
+    "prettier": "^3.10.1"
+  }
+}
