@@ -100,6 +100,12 @@ GET {{baseUrl}}/tasks/42
 ### Error 404: a UUID that does not exist
 GET {{baseUrl}}/tasks/{{$guid}}
 
+### Liveness: the process responds (checks no dependency)
+GET http://localhost:3000/api/health/live
+
+### Readiness: the database answers (503 problem when it is down)
+GET http://localhost:3000/api/health/ready
+
 ### Your own request id comes back in the X-Request-Id header (and in the logs)
 GET {{baseUrl}}/tasks/{{$guid}}
 X-Request-Id: manual-test-001
