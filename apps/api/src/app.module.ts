@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.validation.js';
 import { DatabaseModule } from './database/database.module.js';
 import { LoggingModule } from './logging/logging.module.js';
+import { RateLimitModule } from './security/rate-limit.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 
 @Module({
@@ -13,6 +14,7 @@ import { TasksModule } from './tasks/tasks.module.js';
       validate: validateEnv,
     }),
     LoggingModule,
+    RateLimitModule,
     DatabaseModule,
     TasksModule,
   ],

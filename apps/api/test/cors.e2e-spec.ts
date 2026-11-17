@@ -41,7 +41,7 @@ describe('CORS (e2e)', () => {
 
     expect(response.headers).toMatchObject({
       'access-control-allow-origin': ALLOWED_ORIGIN,
-      'access-control-expose-headers': 'Location,X-Request-Id',
+      'access-control-expose-headers': 'Location,X-Request-Id,Retry-After',
       vary: expect.stringContaining('Origin'),
     });
   });

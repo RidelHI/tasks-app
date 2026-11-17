@@ -11,7 +11,12 @@ export default defineConfig({
     // One disposable PostgreSQL container per run (requires Docker).
     globalSetup: ['./test/setup/postgres.global-setup.ts'],
     setupFiles: ['reflect-metadata', './test/setup/database-env.ts'],
-    // Silent logs keep the output readable; one allowed origin lets the CORS tests run.
-    env: { LOG_LEVEL: 'silent', CORS_ORIGINS: 'http://localhost:4200' },
+    // Silent logs keep the output readable; one allowed origin lets the CORS tests run; a high
+    // rate limit keeps the suite from being throttled (rate-limit tests set their own limit).
+    env: {
+      LOG_LEVEL: 'silent',
+      CORS_ORIGINS: 'http://localhost:4200',
+      RATE_LIMIT_REQUESTS: '10000',
+    },
   },
 });

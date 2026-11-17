@@ -1,4 +1,5 @@
 import type { INestApplication, Type } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import type { App } from 'supertest/types.js';
 import { AppModule } from '../../src/app.module.js';
@@ -18,7 +19,8 @@ export async function createTestApp(options: TestAppOptions = {}): Promise<INest
     controllers: options.controllers ?? [],
   }).compile();
 
-  const app = moduleRef.createNestApplication<INestApplication<App>>({ bufferLogs: true });
+  // Same platform as main.ts (Express), which configureApp relies on (e.g. `trust proxy`).
+  const app = moduleRef.createNestApplication<NestExpressApplication>({ bufferLogs: true });
   configureApp(app);
   options.beforeInit?.(app);
   await app.init();
