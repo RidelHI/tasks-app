@@ -1,0 +1,58 @@
+// Narrow screens scroll the table sideways instead of squeezing its columns.
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 640px;
+}
+
+.mat-column-dueDate {
+  white-space: nowrap;
+}
+
+.title {
+  display: block;
+  font: var(--mat-sys-title-small);
+}
+
+.description {
+  display: block;
+  max-width: 48ch;
+  overflow: hidden;
+  color: var(--mat-sys-on-surface-variant);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--mat-sys-corner-full);
+  font: var(--mat-sys-label-medium);
+  white-space: nowrap;
+  background-color: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+
+  &[data-status='in_progress'] {
+    background-color: var(--mat-sys-primary-container);
+    color: var(--mat-sys-on-primary-container);
+  }
+
+  // A soft green tint: the tertiary container of the green palette is too saturated for a label.
+  &[data-status='done'] {
+    background-color: color-mix(in srgb, var(--mat-sys-tertiary) 16%, transparent);
+    color: color-mix(in srgb, var(--mat-sys-tertiary) 65%, var(--mat-sys-on-surface));
+  }
+}
+
+.overdue {
+  display: block;
+  color: var(--mat-sys-error);
+  font: var(--mat-sys-label-medium);
+}

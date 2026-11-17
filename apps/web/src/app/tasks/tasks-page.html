@@ -1,0 +1,54 @@
+<header class="page-header">
+  <h1>Tasks</h1>
+</header>
+
+<app-task-filters
+  [status]="query().status"
+  [assignee]="query().assignee"
+  (statusChange)="filter({ status: $event })"
+  (assigneeChange)="filter({ assignee: $event })"
+  (cleared)="clearFilters()"
+/>
+
+<section class="results" aria-label="Task list" [attr.aria-busy]="tasks.isLoading()">
+  <div class="progress">
+    @if (tasks.isLoading()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Loading tasks" />
+    }
+  </div>
+
+  @if (tasks.error(); as error) {
+    <div class="state" role="alert">
+      <mat-icon svgIcon="error" />
+      <p class="state-title">The tasks could not be loaded</p>
+      <p>{{ errorMessage(error) }}</p>
+      <button matButton="outlined" type="button" (click)="tasks.reload()">Try again</button>
+    </div>
+  } @else if (taskPage(); as page) {
+    @if (page.totalItems === 0) {
+      @if (filtered()) {
+        <div class="state">
+          <mat-icon svgIcon="search_off" />
+          <p class="state-title">No tasks match these filters</p>
+          <button matButton="outlined" type="button" (click)="clearFilters()">Clear filters</button>
+        </div>
+      } @else {
+        <div class="state">
+          <mat-icon svgIcon="playlist_add_check" />
+          <p class="state-title">No tasks yet</p>
+          <p>Tasks you create will show up here, newest first.</p>
+        </div>
+      }
+    } @else {
+      <app-task-table [tasks]="page.items" [today]="today" />
+      <mat-paginator
+        aria-label="Pages of tasks"
+        [length]="page.totalItems"
+        [pageIndex]="page.page - 1"
+        [pageSize]="page.pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="changePage($event)"
+      />
+    }
+  }
+</section>
