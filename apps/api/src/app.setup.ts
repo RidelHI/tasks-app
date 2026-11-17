@@ -3,13 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Logger } from 'nestjs-pino';
+import { API_PREFIX } from './app.constants.js';
 import { ProblemDetailsFilter } from './common/errors/problem-details.filter.js';
 import { ValidationException } from './common/errors/validation.exception.js';
 import type { EnvironmentVariables } from './config/env.validation.js';
 import { buildCorsOptions } from './security/cors.js';
 import { securityHeaders } from './security/security-headers.js';
-
-export const API_PREFIX = 'api';
 
 /**
  * Application-level configuration shared by main.ts and the e2e tests, so the tests exercise

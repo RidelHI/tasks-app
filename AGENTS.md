@@ -54,6 +54,10 @@ A change is done when build, lint and all tests pass.
   A global rate limit per client IP answers 429 with `Retry-After` (`RATE_LIMIT_*`);
   infrastructure endpoints (health checks) opt out with `@SkipThrottle()`. Behind a reverse
   proxy, set `TRUST_PROXY_HOPS` so the client IP comes from `X-Forwarded-For`.
+- Health checks (`src/health`, terminus) are not versioned: `/api/health/live` checks no
+  dependency (liveness: restarting would not fix an outage) and `/api/health/ready` checks
+  them (readiness: 503 when one is down). A new dependency adds its indicator to `ready`
+  only. Health requests are left out of the request log.
 - Read configuration only through `ConfigService<EnvironmentVariables, true>`, never
   `process.env`. New variables go in `src/config/env.validation.ts` and `.env.example`.
 - Log through `Logger` from `@nestjs/common` (`new Logger(MyClass.name)`); never
