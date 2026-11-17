@@ -7,6 +7,7 @@ describe('validateEnv', () => {
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(3000);
     expect(env.LOG_LEVEL).toBe('info');
+    expect(env.SWAGGER_ENABLED).toBe(true);
   });
 
   it('converts numeric strings to numbers', () => {
@@ -29,6 +30,17 @@ describe('validateEnv', () => {
 
   it('rejects an unknown LOG_LEVEL', () => {
     expect(() => validateEnv({ LOG_LEVEL: 'verbose' })).toThrow(/LOG_LEVEL/);
+  });
+
+  it.each([
+    ['true', true],
+    ['false', false],
+  ])('parses SWAGGER_ENABLED=%j as %s', (raw, expected) => {
+    expect(validateEnv({ SWAGGER_ENABLED: raw }).SWAGGER_ENABLED).toBe(expected);
+  });
+
+  it.each(['yes', '1', 'TRUE', ''])('rejects SWAGGER_ENABLED=%j', (raw) => {
+    expect(() => validateEnv({ SWAGGER_ENABLED: raw })).toThrow(/SWAGGER_ENABLED/);
   });
 
   it('reports every invalid variable in a single error', () => {

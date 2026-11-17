@@ -26,15 +26,19 @@ A change is done when build, lint and all tests pass.
 
 - TypeScript strict; `any` is a lint error. Prefer `as const` unions over `enum`.
 - ESM: relative imports end in `.js` (`import { X } from './x.js'`).
+- Routes are served under `/api/v1` (global prefix + URI versioning in `src/app.setup.ts`).
+  OpenAPI docs at `/api/docs`; document DTOs with JSDoc comments (Swagger CLI plugin).
 - One module per feature; controller → service → repository. Input is validated with
-  class-validator DTOs; responses use response DTOs, never entities.
+  class-validator DTOs (unknown properties are rejected; conversions are explicit with
+  `@Type`/`@Transform`); responses use response DTOs, never entities.
 - Read configuration only through `ConfigService<EnvironmentVariables, true>`, never
   `process.env`. New variables go in `src/config/env.validation.ts` and `.env.example`.
 - Log through `Logger` from `@nestjs/common` (`new Logger(MyClass.name)`); never
   `console.log`. Logs are JSON (pino) outside development and carry the request id.
 - Schema changes only through TypeORM migrations; never `synchronize: true`.
 - Tests ship with the feature: unit tests next to the code (`*.spec.ts`), e2e tests in
-  `apps/api/test`.
+  `apps/api/test`. E2E tests build the app with `createTestApp()` (`test/utils`), which
+  applies the same `configureApp()` as `main.ts`.
 
 ## Git
 

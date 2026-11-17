@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
 import { validateEnv } from './config/env.validation.js';
 import { LoggingModule } from './logging/logging.module.js';
 
@@ -14,7 +12,5 @@ import { LoggingModule } from './logging/logging.module.js';
     }),
     LoggingModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
