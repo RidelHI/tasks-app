@@ -1,5 +1,9 @@
 <header class="page-header">
   <h1>Tasks</h1>
+  <button matButton="filled" type="button" (click)="openForm()">
+    <mat-icon svgIcon="add" />
+    New task
+  </button>
 </header>
 
 <app-task-filters
@@ -37,10 +41,11 @@
           <mat-icon svgIcon="playlist_add_check" />
           <p class="state-title">No tasks yet</p>
           <p>Tasks you create will show up here, newest first.</p>
+          <button matButton="outlined" type="button" (click)="openForm()">Create a task</button>
         </div>
       }
     } @else {
-      <app-task-table [tasks]="page.items" [today]="today" />
+      <app-task-table [tasks]="page.items" [today]="today" (edit)="openForm($event)" />
       <mat-paginator
         aria-label="Pages of tasks"
         [length]="page.totalItems"

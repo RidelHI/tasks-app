@@ -12,6 +12,11 @@ table {
   white-space: nowrap;
 }
 
+.mat-column-actions {
+  width: 48px;
+  text-align: end;
+}
+
 .title {
   display: block;
   font: var(--mat-sys-title-small);
