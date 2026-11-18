@@ -48,15 +48,22 @@ import {
     }
   `,
   styles: `
+    // Aligned to the top: only the assignee has a hint under its box, so centering would push
+    // the other controls down by half the hint's height.
     :host {
       display: flex;
       flex-wrap: wrap;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px 16px;
     }
 
     mat-form-field {
       width: 240px;
+    }
+
+    // Centers the 40px button on the 56px box of the fields.
+    button {
+      margin-top: 8px;
     }
   `,
 })
