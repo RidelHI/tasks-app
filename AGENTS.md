@@ -18,6 +18,7 @@ Task management app in an npm workspaces monorepo:
 | Local API settings (once)   | copy `apps/api/.env.example` to `apps/api/.env`      |
 | Start PostgreSQL (Docker)   | `npm run db:up`                                      |
 | Apply / revert migrations   | `npm run migration:run` · `npm run migration:revert` |
+| Load demo tasks (empty DB)  | `npm run db:seed`                                    |
 | Run the API in watch mode   | `npm run dev:api`                                    |
 | Run the web app (port 4200) | `npm run dev:web` (proxies `/api` to the API)        |
 | Build / lint / unit tests   | `npm run build` · `npm run lint` · `npm test`        |
@@ -77,6 +78,9 @@ A change is done when build, lint and all tests pass, for both apps.
   are `timestamptz`. Index what lists filter and sort by. Expression indexes (e.g.
   `lower(column)`) are written by hand in the migration and declared on the entity with
   `@Index(name, { synchronize: false })`, so the schema sync does not drop them.
+- Demo data lives in `src/database/seed/` and is inserted only into an empty table, never by a
+  migration (migrations run in every environment). When the schema changes, update it: a unit
+  test validates every demo task with `CreateTaskDto`.
 - Tests ship with the feature: unit tests next to the code (`*.spec.ts`), e2e tests in
   `apps/api/test`. E2E tests build the app with `createTestApp()` (`test/utils`), which
   applies the same `configureApp()` as `main.ts`, and run against a disposable PostgreSQL

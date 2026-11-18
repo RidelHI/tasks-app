@@ -21,6 +21,7 @@
     "dev:web": "npm start -w @tasks/web",
     "migration:run": "npm run migration:run -w @tasks/api",
     "migration:revert": "npm run migration:revert -w @tasks/api",
+    "db:seed": "npm run seed -w @tasks/api",
     "db:up": "docker compose up --detach --wait db",
     "db:down": "docker compose down",
     "db:reset": "docker compose down --volumes && docker compose up --detach --wait db",
