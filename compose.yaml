@@ -62,6 +62,18 @@ services:
       db:
         condition: service_healthy
 
+  # Loads demo tasks if the database has none, then exits: the app opens with enough content to
+  # try the filters and the pagination. Tasks created afterwards are never touched, and
+  # `down --volumes` starts over. A real deployment leaves this service out.
+  seed:
+    <<: [*hardening, *api-image]
+    profiles: [app]
+    command: [node, dist/database/seed.js]
+    environment: *api-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
   api:
     <<: [*hardening, *api-image]
     profiles: [app]
@@ -78,6 +90,8 @@ services:
     expose: ['3000']
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      seed:
         condition: service_completed_successfully
     healthcheck:
       # Readiness (database included): Compose starts nginx once the API can serve requests.

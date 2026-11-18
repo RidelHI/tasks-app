@@ -91,8 +91,9 @@ A change is done when build, lint and all tests pass, for both apps.
 
 - `compose.yaml` runs PostgreSQL alone (`npm run db:up`, for development) or, with the `app`
   profile (`npm run app:up`), the whole app built as for production on http://localhost:8080:
-  `migrate` applies the migrations and exits, then `api` starts, then `web` (nginx serves the
-  Angular build and forwards `/api` to the API). Only the web port is published, on localhost.
+  `migrate` applies the migrations and exits, `seed` loads the demo tasks if the database has
+  none and exits, then `api` starts, then `web` (nginx serves the Angular build and forwards
+  `/api` to the API). Only the web port is published, on localhost.
 - Each app has its image (`apps/<app>/Dockerfile`), built from the repository root.
   `.dockerignore` is an allowlist: a file an image needs must be added to it. Base images are
   pinned by version and digest; update both together.
